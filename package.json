@@ -1,0 +1,19 @@
+{
+  "name": "cifar10-app",
+  "version": "0.0.1",
+  "description": "Web app that predicts image class with model trained on cifar10",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Haakam Aujla",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.3"
+  }
+}
