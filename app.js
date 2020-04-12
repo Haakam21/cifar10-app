@@ -7,8 +7,8 @@ const HTTP_PORT = 8080
 const HTTPS_PORT = 8443
 
 const https_options = {
-  key: fs.readFileSync('/key.pem'),
-  cert: fs.readFileSync('/cert.pem')
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
 }
 
 
@@ -19,7 +19,7 @@ const httpsServer = https.createServer(https_options, app)
 app.use(express.json())
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + 'index.html');
 })
 
 app.post('/', (req, res) => {
