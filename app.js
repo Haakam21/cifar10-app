@@ -14,7 +14,7 @@ const https_options = {
 
 const app = express()
 const httpServer = http.createServer(app)
-//const httpsServer = https.createServer(https_options, app)
+const httpsServer = https.createServer(https_options, app)
 
 app.use(express.json())
 
@@ -50,13 +50,9 @@ app.post('/', (req, res) => {
 
 
 httpServer.listen(HTTP_PORT, () => {
-  console.log(`HTTP erver running on port ${HTTP_PORT}`)
+  console.log(`HTTP server running on port ${HTTP_PORT}`)
 })
 
-/*httpsServer.listen(HTTPS_PORT, () => {
+httpsServer.listen(HTTPS_PORT, () => {
   console.log(`HTTPS server running on port ${HTTPS_PORT}`)
-})*/
-https.createServer(https_options, function (req, res) {
-  res.writeHead(200);
-  res.end("hello world");
-}).listen(HTTPS_PORT);
+})
