@@ -5,8 +5,8 @@ const http = require('http')
 const https = require('https')
 const express = require('express')
 
-const HTTP_PORT = 8080
-const HTTPS_PORT = 8443
+const HTTP_PORT = 80
+const HTTPS_PORT = 443
 
 const https_options = {
   key: fs.readFileSync('key.pem'),
