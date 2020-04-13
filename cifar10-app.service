@@ -1,0 +1,14 @@
+[Unit]
+Description=Web app that predicts image class with model trained on cifar10
+
+[Service]
+ExecStart=/var/www/cifar10-app/app.js
+Restart=always
+User=nobody
+Group=nogroup
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+WorkingDirectory=/var/www/cifar10-app
+
+[Install]
+WantedBy=multi-user.target
