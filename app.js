@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 
 app.post('/', (req, res) => {
   const options = {
-    hostname: '192.168.1.26',
+    hostname: 'localhost',
     port: 8501,
     path: '/v1/models/cifar10:predict',
     method: 'POST',
