@@ -4,7 +4,7 @@ Description=cifar10-app
 [Service]
 ExecStart=/var/www/cifar10-app/app.js
 Restart=always
-User=nobody
+User=root
 Group=nogroup
 Environment=PATH=/usr/bin:/usr/local/bin
 Environment=NODE_ENV=production
