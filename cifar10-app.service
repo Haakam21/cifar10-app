@@ -1,5 +1,5 @@
 [Unit]
-Description=Web app that predicts image class with model trained on cifar10
+Description=cifar10-app
 
 [Service]
 ExecStart=/var/www/cifar10-app/app.js
