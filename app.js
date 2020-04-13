@@ -8,15 +8,15 @@ const express = require('express')
 const HTTP_PORT = 8080
 const HTTPS_PORT = 8443
 
-/*const https_options = {
+const https_options = {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem')
-}*/
+}
 
 
 const app = express()
 const httpServer = http.createServer(app)
-//const httpsServer = https.createServer(https_options, app)
+const httpsServer = https.createServer(https_options, app)
 
 app.use(express.json())
 
@@ -55,6 +55,6 @@ httpServer.listen(HTTP_PORT, () => {
   console.log(`HTTP server running on port ${HTTP_PORT}`)
 })
 
-/*httpsServer.listen(HTTPS_PORT, () => {
+httpsServer.listen(HTTPS_PORT, () => {
   console.log(`HTTPS server running on port ${HTTPS_PORT}`)
-})*/
+})
