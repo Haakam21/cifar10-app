@@ -9,8 +9,8 @@ const HTTP_PORT = 80
 const HTTPS_PORT = 443
 
 const https_options = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem')
+  key: fs.readFileSync('/etc/letsencrypt/live/cifar10app.ddns.net/fullchain.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/cifar10app.ddns.net/privkey.pem')
 }
 
 
