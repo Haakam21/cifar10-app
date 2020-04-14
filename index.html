@@ -5,7 +5,7 @@
 
   <style>
     #image_input {
-      display: block
+      display: block;
     }
   </style>
 </head>
@@ -13,8 +13,8 @@
 <h1>CIFAR-10 App</h1>
 <p>Upload an image to be classified within one of the following classes.</p>
 <h3 id="classes"></h3>
-<img id="preview" src="airplane.png" alt="upload image" height=400/>
-<input id="image_input" type="file" accept="image/*">
+<img id="preview" alt="upload image" height=400/>
+<input id="image_input" type="file" accept="image/*"/>
 <h2 id="prediction"></h2>
 <p id="probabilities"></p>
 
@@ -94,8 +94,16 @@
   $(document).ready(function() {
     $('#classes').text('classes: ' + classes.join(', '))
 
+    if (Math.random() < 0.5) {
+      document.getElementById('preview').src = 'airplane.png'
+    } else {
+      document.getElementById('preview').src = 'bird.png'
+    }
+
     var image = document.getElementById('preview')
-    predict(image)
+    image.onload = function (imageEvent) {
+      predict(image)
+    }
   })
 
   $('#image_input').on('change', function(){
