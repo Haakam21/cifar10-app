@@ -1,126 +1,142 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <style>
-    #image_input {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-<h1>CIFAR-10 App</h1>
-<p>Upload an image to be classified within one of the following classes.</p>
-<h3 id="classes"></h3>
-<img id="preview" alt="upload image" height=400/>
-<input id="image_input" type="file" accept="image/*"/>
-<h2 id="prediction"></h2>
-<p id="probabilities"></p>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-<script>
-  var image_width = 32
-  var image_height = 32
+    <title>CIFAR-10 App</title>
+  </head>
+  <body class="w-75 mx-auto p-2">
+    <h1>CIFAR-10 App</h1>
+    <p>Upload an image to be classified within one of the following classes.</p>
+    <h5 class="mb-2">Classes: <span id="classes"></span></h5>
+    <img class="img-fluid mb-2" id="preview" height=400 alt="upload image"/>
+    <div class="input-group w-auto mb-2">
+      <div class="custom-file">
+        <input type="file" class="custom-file-input" id="imageInput" aria-describedby="imageInput">
+        <label class="custom-file-label" for="imageInput">Choose file</label>
+      </div>
+    </div>
+    <div class="spinner-border" id="spinner" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+    <div id="prediction">
+      <h3>Prediction: <span id="prediction"></span></h3>
+      <p>Probabilities: <span id="probabilities"></span></p>
+    </div>
 
-  var classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+      var image_width = 32
+      var image_height = 32
+
+      var classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 
-  var reshapeImageData = function(data, width, height) {
-    var imageData = []
-    for (i = 0; i < height; i++) {
-      var row = []
-      for (j = 0; j < width; j++) {
-        row[j] = [data[4 * (width * i + j)], data[4 * (width * i + j) + 1], data[4 * (width * i + j) + 2]]
-      }
-      imageData[i] = row
-    }
-    console.log(imageData)
-    return imageData
-  }
-
-  function maxIndexValue(array) {
-    var maxValue = array[0]
-    var maxIndex = 0
-    for (var i = 1; i < array.length; i++) {
-        if (array[i] > maxValue) {
-            maxIndex = i
-            maxValue = array[i]
+      var reshapeImageData = function(data, width, height) {
+        var imageData = []
+        for (i = 0; i < height; i++) {
+          var row = []
+          for (j = 0; j < width; j++) {
+            row[j] = [data[4 * (width * i + j)], data[4 * (width * i + j) + 1], data[4 * (width * i + j) + 2]]
+          }
+          imageData[i] = row
         }
-    }
-    return [maxIndex, maxValue]
-  }
-
-  function percentage(num) {
-    return Math.round(num * 10000) / 100 + '%'
-  }
-
-  var handlePrediction = function(response) {
-    console.log(response)
-    predictions = response.predictions[0]
-    var max = maxIndexValue(predictions)
-    $('#prediction').text('prediction: ' + classes[max[0]] + ' (' + percentage(max[1])+ ')')
-    var probabilities = 'probabilities: '
-    for (var i = 0; i < classes.length; i++) {
-        probabilities += classes[i] + ': ' + percentage(predictions[i])
-        if (i < classes.length - 1) {
-          probabilities += ', '
-        }
-    }
-    $('#probabilities').text(probabilities)
-  }
-
-
-  var predict = function(image) {
-    var canvas = document.createElement('canvas')
-    var ctx = canvas.getContext('2d')
-
-    ctx.drawImage(image, 0, 0, image_width, image_height)
-    var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
-    var imageData = reshapeImageData(canvasData, image_width, image_height)
-
-    jsonData = {'instances': [imageData]}
-
-    $.ajax({
-      method: 'post',
-      url: '/',
-      data: JSON.stringify(jsonData),
-      dataType: 'json',
-      contentType: 'application/json',
-      success: handlePrediction,
-      cache: false
-    })
-  }
-
-  $(document).ready(function() {
-    $('#classes').text('classes: ' + classes.join(', '))
-
-    if (Math.random() < 0.5) {
-      document.getElementById('preview').src = 'airplane.png'
-    } else {
-      document.getElementById('preview').src = 'bird.png'
-    }
-
-    var image = document.getElementById('preview')
-    image.onload = function (imageEvent) {
-      predict(image)
-    }
-  })
-
-  $('#image_input').on('change', function(){
-    var file = this.files[0]
-
-    document.getElementById('preview').src = window.URL.createObjectURL(file)
-
-    var reader = new FileReader()
-    reader.onload = function (readerEvent) {
-      var image = new Image()
-      image.onload = function (imageEvent) {
-        predict(image)
+        console.log(imageData)
+        return imageData
       }
-      image.src = readerEvent.target.result
-    }
-    reader.readAsDataURL(file)
-  })
-</script>
-</body>
+
+      function maxIndexValue(array) {
+        var maxValue = array[0]
+        var maxIndex = 0
+        for (var i = 1; i < array.length; i++) {
+            if (array[i] > maxValue) {
+                maxIndex = i
+                maxValue = array[i]
+            }
+        }
+        return [maxIndex, maxValue]
+      }
+
+      function percentage(num) {
+        return Math.round(num * 10000) / 100 + '%'
+      }
+
+      var handleResponse = function(response) {
+        console.log(response)
+
+        predictions = response.predictions[0]
+        var max = maxIndexValue(predictions)
+        $('#prediction h3 span').text(classes[max[0]] + ' (' + percentage(max[1])+ ')')
+
+        var probabilities = []
+        for (var i = 0; i < classes.length; i++) {
+            probabilities[i] = classes[i] + ': ' + percentage(predictions[i])
+        }
+        $('#prediction p span').text(probabilities.join(', '))
+
+        $('#spinner').hide()
+        $('#prediction').show()
+      }
+
+
+      var predict = function(image) {
+        var canvas = document.createElement('canvas')
+        var ctx = canvas.getContext('2d')
+
+        ctx.drawImage(image, 0, 0, image_width, image_height)
+        var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
+        var imageData = reshapeImageData(canvasData, image_width, image_height)
+
+        jsonData = {'instances': [imageData]}
+
+        $.ajax({
+          method: 'post',
+          url: '/',
+          data: JSON.stringify(jsonData),
+          dataType: 'json',
+          contentType: 'application/json',
+          success: handleResponse,
+          cache: false
+        })
+      }
+
+      $(document).ready(function() {
+        $('#prediction').hide()
+        $('#classes').text(classes.join(', '))
+
+        if (Math.random() < 0.5) {
+          document.getElementById('preview').src = 'airplane.png'
+        } else {
+          document.getElementById('preview').src = 'bird.png'
+        }
+
+        var image = document.getElementById('preview')
+        image.onload = function (imageEvent) {
+          predict(image)
+        }
+      })
+
+      $('#imageInput').on('change', function(){
+        $('#spinner').show()
+        $('#prediction').hide()
+
+        var file = this.files[0]
+
+        document.getElementById('preview').src = window.URL.createObjectURL(file)
+
+        var reader = new FileReader()
+        reader.onload = function (readerEvent) {
+          var image = new Image()
+          image.onload = function (imageEvent) {
+            predict(image)
+          }
+          image.src = readerEvent.target.result
+        }
+        reader.readAsDataURL(file)
+      })
+    </script>
+  </body>
 </html>
