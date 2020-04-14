@@ -2,12 +2,18 @@
 <html>
 <head>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <style>
+    #image_input {
+      display: block
+    }
+  </style>
 </head>
 <body>
 <h1>CIFAR-10 App</h1>
-
+<p>Upload an image to be classified within one of the following classes.</p>
 <h3 id="classes"></h3>
-<img id="preview" alt="upload image" height=400/>
+<img id="preview" src="airplane.png" alt="upload image" height=400/>
 <input id="image_input" type="file" accept="image/*">
 <h2 id="prediction"></h2>
 <p id="probabilities"></p>
@@ -48,7 +54,7 @@
     return Math.round(num * 10000) / 100 + '%'
   }
 
-  var handleResponse = function(response) {
+  var handlePrediction = function(response) {
     console.log(response)
     predictions = response.predictions[0]
     var max = maxIndexValue(predictions)
@@ -64,37 +70,44 @@
   }
 
 
+  var predict = function(image) {
+    var canvas = document.createElement('canvas')
+    var ctx = canvas.getContext('2d')
+
+    ctx.drawImage(image, 0, 0, image_width, image_height)
+    var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
+    var imageData = reshapeImageData(canvasData, image_width, image_height)
+
+    jsonData = {'instances': [imageData]}
+
+    $.ajax({
+      method: 'post',
+      url: '/',
+      data: JSON.stringify(jsonData),
+      dataType: 'json',
+      contentType: 'application/json',
+      success: handlePrediction,
+      cache: false
+    })
+  }
+
   $(document).ready(function() {
     $('#classes').text('classes: ' + classes.join(', '))
-  });
+
+    var image = document.getElementById('preview')
+    predict(image)
+  })
 
   $('#image_input').on('change', function(){
     var file = this.files[0]
 
-    $('#preview').attr('src', window.URL.createObjectURL(file))
+    document.getElementById('preview').src = window.URL.createObjectURL(file)
 
     var reader = new FileReader()
     reader.onload = function (readerEvent) {
       var image = new Image()
       image.onload = function (imageEvent) {
-        var canvas = document.createElement('canvas')
-        var ctx = canvas.getContext('2d')
-
-        ctx.drawImage(image, 0, 0, image_width, image_height)
-        var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
-        var imageData = reshapeImageData(canvasData, image_width, image_height)
-
-        jsonData = {'instances': [imageData]}
-
-        $.ajax({
-          method: 'post',
-          url: '/',
-          data: JSON.stringify(jsonData),
-          dataType: 'json',
-          contentType: 'application/json',
-          success: handleResponse,
-          cache: false
-        })
+        predict(image)
       }
       image.src = readerEvent.target.result
     }

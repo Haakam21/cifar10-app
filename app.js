@@ -10,6 +10,7 @@ const app = express()
 const httpServer = http.createServer(app)
 
 app.use(express.json())
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
