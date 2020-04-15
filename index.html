@@ -12,7 +12,7 @@
     <h1>CIFAR-10 App</h1>
     <p>Upload an image to be classified within one of the following classes.</p>
     <h5 class="mb-2">Classes: <span id="classes"></span></h5>
-    <img class="img-fluid mb-2" id="preview" height=400 alt="upload image"/>
+    <img class="img-fluid mb-2" id="preview" alt="upload image"/>
     <div class="input-group w-auto mb-2">
       <div class="custom-file">
         <input type="file" class="custom-file-input" id="imageInput" aria-describedby="imageInput">
@@ -106,12 +106,7 @@
       $(document).ready(function() {
         $('#prediction').hide()
         $('#classes').text(classes.join(', '))
-
-        if (Math.random() < 0.5) {
-          document.getElementById('preview').src = 'airplane.png'
-        } else {
-          document.getElementById('preview').src = 'bird.png'
-        }
+        document.getElementById('preview').src = 'airplane.png'
 
         var image = document.getElementById('preview')
         image.onload = function (imageEvent) {
@@ -120,22 +115,23 @@
       })
 
       $('#imageInput').on('change', function(){
-        $('#spinner').show()
-        $('#prediction').hide()
-
         var file = this.files[0]
+        if (file) {
+          $('#spinner').show()
+          $('#prediction').hide()
 
-        document.getElementById('preview').src = window.URL.createObjectURL(file)
+          document.getElementById('preview').src = window.URL.createObjectURL(file)
 
-        var reader = new FileReader()
-        reader.onload = function (readerEvent) {
-          var image = new Image()
-          image.onload = function (imageEvent) {
-            predict(image)
+          var reader = new FileReader()
+          reader.onload = function (readerEvent) {
+            var image = new Image()
+            image.onload = function (imageEvent) {
+              predict(image)
+            }
+            image.src = readerEvent.target.result
           }
-          image.src = readerEvent.target.result
+          reader.readAsDataURL(file)
         }
-        reader.readAsDataURL(file)
       })
     </script>
   </body>
