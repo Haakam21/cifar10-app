@@ -5,7 +5,14 @@ const express = require('express')
 const mongoose = require('mongoose')
 
 const HTTP_PORT = 8080
-const MONGO_URL = 'mongodb+srv://haakam:kHZTs8svfgIvnbyj@cluster0-r0fc0.mongodb.net/cifar10-app?retryWrites=true&w=majority'
+const DB_URL = 'mongodb+srv://haakam:kHZTs8svfgIvnbyj@cluster0-r0fc0.mongodb.net/cifar10-app?retryWrites=true&w=majority'
+
+const predictionSchema = new mongoose.Schema({
+  image: Array,
+  prediction: Array
+})
+predictionSchema.index({image: 1}, {unique: true})
+const Prediction = mongoose.model('Prediction', predictionSchema)
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -16,14 +23,6 @@ app.use(express.static(__dirname + '/public'))
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html')
 })
-
-const predictionSchema = new mongoose.Schema({
-  image: Array,
-  prediction: Array
-})
-predictionSchema.index({image: 1}, {unique: true})
-
-const Prediction = mongoose.model('Prediction', predictionSchema)
 
 app.post('/', (req, res) => {
   const options = {
@@ -47,7 +46,7 @@ app.post('/', (req, res) => {
         prediction: obj.predictions[0]
       })
 
-      mongoose.connect(MONGO_URL, {useNewUrlParser: true, useUnifiedTopology: true})
+      mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true})
 
       prediction.save().then(save_res => {
         console.log('prediction saved')
