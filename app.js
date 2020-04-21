@@ -4,15 +4,23 @@ const fs = require('fs')
 const http = require('http')
 const https = require('https')
 const express = require('express')
+const mongoose = require('mongoose')
 
 const HTTP_PORT = 80
 const HTTPS_PORT = 443
+const DB_URL = 'mongodb+srv://haakam:kHZTs8svfgIvnbyj@cluster0-r0fc0.mongodb.net/cifar10-app?retryWrites=true&w=majority'
 
 const https_options = {
   key: fs.readFileSync('/etc/letsencrypt/live/cifar10app.ddns.net/privkey.pem'),
   cert: fs.readFileSync('/etc/letsencrypt/live/cifar10app.ddns.net/fullchain.pem')
 }
 
+const predictionSchema = new mongoose.Schema({
+  image: Array,
+  prediction: Array
+})
+predictionSchema.index({image: 1}, {unique: true})
+const Prediction = mongoose.model('Prediction', predictionSchema)
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -38,8 +46,24 @@ app.post('/', (req, res) => {
 
   const ext_req = http.request(options, ext_res => {
     ext_res.on('data', d => {
-      console.log(d)
-      res.send(d)
+      obj = JSON.parse(d)
+      res.send(obj)
+      console.log(obj)
+
+      const prediction = new Prediction({
+        image: req.body.instances[0],
+        prediction: obj.predictions[0]
+      })
+
+      mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true})
+
+      prediction.save().then(save_res => {
+        console.log('prediction saved')
+        mongoose.connection.close()
+      }).catch(save_res => {
+        console.log('prediction not saved')
+        mongoose.connection.close()
+      })
     })
   })
 
