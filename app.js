@@ -44,7 +44,7 @@ app.get('/predictions', (req, res) => {
 })
 
 app.post('/predict', (req, res) => {
-  const options = {
+  const ext_req_options = {
     hostname: 'localhost',
     port: 8501,
     path: '/v1/models/cifar10:predict',
