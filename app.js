@@ -1,18 +1,21 @@
-const fs = require('fs')
+require('dotenv').config()
 const http = require('http')
 const https = require('https')
 const express = require('express')
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
 
 const HTTP_PORT = 8080
-const DB_URL = 'mongodb+srv://haakam:kHZTs8svfgIvnbyj@cluster0-r0fc0.mongodb.net/cifar10-app?retryWrites=true&w=majority'
+const DB_URI = process.env.MONGODB_URI
 
-const predictionSchema = new mongoose.Schema({
-  image: Array,
+const Prediction = mongoose.model('Prediction', new mongoose.Schema({
+  date: Date,
+  image: {
+    type: Array,
+    unique: true
+  },
   prediction: Array
-})
-predictionSchema.index({image: 1}, {unique: true})
-const Prediction = mongoose.model('Prediction', predictionSchema)
+}).plugin(uniqueValidator))
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -24,8 +27,14 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html')
 })
 
-app.post('/', (req, res) => {
-  const options = {
+app.get('/predictions', (req, res) => {
+  Prediction.find({}).sort('-date').then(predictions => {
+    res.json(predictions)
+  })
+})
+
+app.post('/predict', (req, res) => {
+  const ext_req_options = {
     hostname: '192.168.1.26',
     port: 8501,
     path: '/v1/models/cifar10:predict',
@@ -35,25 +44,22 @@ app.post('/', (req, res) => {
     }
   }
 
-  const ext_req = http.request(options, ext_res => {
+  const ext_req = http.request(ext_req_options, ext_res => {
     ext_res.on('data', d => {
       obj = JSON.parse(d)
       res.send(obj)
       console.log(obj)
 
       const prediction = new Prediction({
+        date: new Date(),
         image: req.body.instances[0],
         prediction: obj.predictions[0]
       })
 
-      mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true})
-
-      prediction.save().then(save_res => {
+      prediction.save().then(result => {
         console.log('prediction saved')
-        mongoose.connection.close()
-      }).catch(save_res => {
+      }).catch(error => {
         console.log('prediction not saved')
-        mongoose.connection.close()
       })
     })
   })
@@ -69,4 +75,11 @@ app.post('/', (req, res) => {
 
 httpServer.listen(HTTP_PORT, () => {
   console.log(`HTTP server running on port ${HTTP_PORT}`)
+})
+
+mongoose.connect(DB_URI, {useNewUrlParser: true, useUnifiedTopology: true}).then(result => {
+  console.log('connected to MongoDB')
+})
+.catch((error) => {
+  console.log('error connecting to MongoDB:', error.message)
 })
