@@ -7,8 +7,14 @@ const express = require('express')
 const mongoose = require('mongoose')
 const uniqueValidator = require('mongoose-unique-validator')
 
-const HTTP_PORT = 8080
+const HTTP_PORT = 80
+const HTTPS_PORT = 443
 const DB_URI = process.env.MONGODB_URI
+
+const https_options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/cifar10app.ddns.net/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/cifar10app.ddns.net/fullchain.pem')
+}
 
 const Prediction = mongoose.model('Prediction', new mongoose.Schema({
 date: Date,
