@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/predictions', (req, res) => {
-  Prediction.find({}).sort('-date').then(predictions => {
+  Prediction.find({}).sort('-date').limit(25).then(predictions => {
     res.json(predictions)
   })
 })
