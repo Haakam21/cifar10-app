@@ -31,6 +31,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="js/load-image.all.min.js"></script>
     <script>
       var image_width = 32
       var image_height = 32
@@ -143,7 +144,7 @@
 
       $(document).ready(function() {
         $('#classes').text(classes.join(', '))
-        document.getElementById('preview').src = 'airplane.png'
+        document.getElementById('preview').src = 'images/airplane.png'
 
         var image = document.getElementById('preview')
         image.onload = function (imageEvent) {
@@ -163,15 +164,13 @@
         if (file) {
           document.getElementById('preview').src = window.URL.createObjectURL(file)
 
-          var reader = new FileReader()
-          reader.onload = function (readerEvent) {
-            var image = new Image()
-            image.onload = function (imageEvent) {
-              predict(image)
-            }
-            image.src = readerEvent.target.result
-          }
-          reader.readAsDataURL(file)
+          var loadingImage = loadImage(
+            file,
+            function (image) {
+                predict(image)
+            },
+            {orientation: 1}
+          )
         }
       })
     </script>
