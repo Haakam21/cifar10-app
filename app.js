@@ -55,7 +55,7 @@ app.post('/predict', (req, res) => {
       prediction.save().then(result => {
         console.log('prediction saved')
       }).catch(error => {
-        console.log('prediction not saved:', error.message)
+        console.log('prediction not saved')
       })
     })
   })
