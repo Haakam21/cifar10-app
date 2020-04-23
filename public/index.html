@@ -31,7 +31,6 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-    <script src="js/load-image.all.min.js"></script>
     <script>
       var image_width = 32
       var image_height = 32
@@ -39,69 +38,57 @@
       var classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 
-      function percentage(num) {
-        return Math.round(num * 10000) / 100 + '%'
-      }
+      $(document).ready(function() {
+        $('#classes').text(classes.join(', '))
 
-      function maxIndexValue(array) {
-        var maxValue = array[0]
-        var maxIndex = 0
-        for (var i = 1; i < array.length; i++) {
-            if (array[i] > maxValue) {
-                maxIndex = i
-                maxValue = array[i]
-            }
+        document.getElementById('preview').src = 'images/airplane.png'
+        predict()
+
+        getPredictions()
+      })
+
+      $('#imageInput').on('change', function(){
+        var file = this.files[0]
+        if (file) {
+          document.getElementById('preview').src = window.URL.createObjectURL(file)
+          predict()
         }
-        return [maxIndex, maxValue]
-      }
+      })
 
-      var shapeImageData = function(data, width, height) {
-        var imageData = []
-        for (i = 0; i < height; i++) {
-          var row = []
-          for (j = 0; j < width; j++) {
-            row[j] = [data[4 * (width * i + j)], data[4 * (width * i + j) + 1], data[4 * (width * i + j) + 2]]
-          }
-          imageData[i] = row
-        }
-        return imageData
-      }
 
-      var unshapeImageData = function(data, width, height) {
-        imageData = new Uint8ClampedArray(width * height * 4)
-        for (var i = 0; i < height; i++) {
-          for (var j = 0; j < width; j++) {
-              var pos = (i * width + j) * 4
-              imageData[pos ] = data[i][j][0]
-              imageData[pos + 1] = data[i][j][1]
-              imageData[pos + 2] = data[i][j][2]
-              imageData[pos + 3] = 255
-          }
-        }
-        return imageData
-      }
-
-      var handlePredictionsResponse = function(response) {
-        console.log(response)
-
-        for (var i = 0; i < response.length; i++)  {
+      var predict = function() {
+        var image = document.getElementById('preview')
+        image.onload = function (imageEvent) {
           var canvas = document.createElement('canvas')
           canvas.width = image_width
           canvas.height = image_height
           var ctx = canvas.getContext('2d')
 
-          var imageData = ctx.createImageData(image_width, image_height)
-          imageData.data.set(unshapeImageData(response[i].image, image_width, image_height))
-          ctx.putImageData(imageData, 0, 0)
+          ctx.drawImage(image, 0, 0, image_width, image_height)
+          var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
+          var imageData = shapeImageData(canvasData, image_width, image_height)
 
-          $(canvas).attr('data-toggle', 'tooltip')
-          $(canvas).attr('data-placement', 'bottom')
-          var max = maxIndexValue(response[i].prediction)
-          $(canvas).attr('title', classes[max[0]] + ' (' + percentage(max[1])+ ')')
-          $('#predictions div').append(canvas)
+          jsonData = {'instances': [imageData]}
+
+          $.ajax({
+            method: 'post',
+            url: '/predict',
+            data: JSON.stringify(jsonData),
+            dataType: 'json',
+            contentType: 'application/json',
+            success: handlePredictResponse,
+            cache: false
+          })
         }
+      }
 
-        $('[data-toggle="tooltip"]').tooltip()
+      var getPredictions = function() {
+        $.ajax({
+          method: 'get',
+          url: '/predictions',
+          contentType: 'application/json',
+          success: handlePredictionsResponse
+        })
       }
 
       var handlePredictResponse = function(response) {
@@ -118,61 +105,71 @@
         $('#prediction p span').text(probabilities.join(', '))
       }
 
+      var handlePredictionsResponse = function(response) {
+        console.log(response)
 
-      var predict = function(image) {
-        var canvas = document.createElement('canvas')
-        canvas.width = image_width
-        canvas.height = image_height
-        var ctx = canvas.getContext('2d')
+        for (var i = 0; i < response.length; i++)  {
+          var canvas = document.createElement('canvas')
+          canvas.width = image_width
+          canvas.height = image_height
+          var ctx = canvas.getContext('2d')
 
-        ctx.drawImage(image, 0, 0, image_width, image_height)
-        var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
-        var imageData = shapeImageData(canvasData, image_width, image_height)
+          var imageData = ctx.createImageData(image_width, image_height)
+          imageData.data.set(unshapeImageData(response[i].image, image_width, image_height))
+          ctx.putImageData(imageData, 0, 0)
 
-        jsonData = {'instances': [imageData]}
+          var max = maxIndexValue(response[i].prediction)
+          $(canvas).attr('data-toggle', 'tooltip')
+          $(canvas).attr('data-placement', 'bottom')
+          $(canvas).attr('title', classes[max[0]] + ' (' + percentage(max[1])+ ')')
+          $('#predictions div').append(canvas)
+        }
 
-        $.ajax({
-          method: 'post',
-          url: '/predict',
-          data: JSON.stringify(jsonData),
-          dataType: 'json',
-          contentType: 'application/json',
-          success: handlePredictResponse,
-          cache: false
-        })
+        $('[data-toggle="tooltip"]').tooltip()
       }
 
-      $(document).ready(function() {
-        $('#classes').text(classes.join(', '))
-        document.getElementById('preview').src = 'images/airplane.png'
-
-        var image = document.getElementById('preview')
-        image.onload = function (imageEvent) {
-          predict(image)
+      var shapeImageData = function(data, width, height) {
+        var imageData = []
+        for (i = 0; i < height; i++) {
+          var row = []
+          for (j = 0; j < width; j++) {
+            var pos = 4 * (width * i + j)
+            row[j] = [data[pos], data[pos + 1], data[pos + 2]]
+          }
+          imageData[i] = row
         }
+        return imageData
+      }
 
-        $.ajax({
-          method: 'get',
-          url: '/predictions',
-          contentType: 'application/json',
-          success: handlePredictionsResponse
-        })
-      })
-
-      $('#imageInput').on('change', function(){
-        var file = this.files[0]
-        if (file) {
-          document.getElementById('preview').src = window.URL.createObjectURL(file)
-
-          var loadingImage = loadImage(
-            file,
-            function (image) {
-                predict(image)
-            },
-            {orientation: 1}
-          )
+      var unshapeImageData = function(data, width, height) {
+        imageData = new Uint8ClampedArray(width * height * 4)
+        for (var i = 0; i < height; i++) {
+          for (var j = 0; j < width; j++) {
+              var pos = 4 * (width * i + j)
+              imageData[pos] = data[i][j][0]
+              imageData[pos + 1] = data[i][j][1]
+              imageData[pos + 2] = data[i][j][2]
+              imageData[pos + 3] = 255
+          }
         }
-      })
+        return imageData
+      }
+
+      function maxIndexValue(array) {
+        var maxValue = array[0]
+        var maxIndex = 0
+        for (var i = 1; i < array.length; i++) {
+            if (array[i] > maxValue) {
+                maxIndex = i
+                maxValue = array[i]
+            }
+        }
+        return [maxIndex, maxValue]
+      }
+
+      function percentage(num) {
+        return Math.round(num * 10000) / 100 + '%'
+      }
     </script>
   </body>
 </html>
