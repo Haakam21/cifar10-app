@@ -42,7 +42,7 @@
         $('#classes').text(classes.join(', '))
 
         document.getElementById('preview').src = 'images/airplane.png'
-        predict()
+        predict(document.getElementById('preview'))
 
         getPredictions()
       })
@@ -50,20 +50,33 @@
       $('#imageInput').on('change', function(){
         var file = this.files[0]
         if (file) {
-          document.getElementById('preview').src = window.URL.createObjectURL(file)
-          predict()
+
+          getOrientation(file, function(orientation) {
+            document.getElementById('preview').src = window.URL.createObjectURL(file)
+            predict(document.getElementById('preview'), orientation)
+          })
         }
       })
 
 
-      var predict = function() {
-        var image = document.getElementById('preview')
+      var predict = function(image, orientation) {
         image.onload = function (imageEvent) {
           var canvas = document.createElement('canvas')
           canvas.width = image_width
           canvas.height = image_height
           var ctx = canvas.getContext('2d')
 
+          console.log(orientation)
+          switch (orientation) {
+            case 2: ctx.transform(-1, 0, 0, 1); break;
+            case 3: ctx.transform(-1, 0, 0, -1); break;
+            case 4: ctx.transform(1, 0, 0, -1); break;
+            case 5: ctx.transform(0, 1, 1, 0); break;
+            case 6: ctx.transform(0, 1, -1, 0); break;
+            case 7: ctx.transform(0, -1, -1, 0); break;
+            case 8: ctx.transform(0, -1, 1, 0); break;
+            default: break;
+          }
           ctx.drawImage(image, 0, 0, image_width, image_height)
           var canvasData = ctx.getImageData(0, 0, image_width, image_height).data
           var imageData = shapeImageData(canvasData, image_width, image_height)
@@ -76,7 +89,19 @@
             data: JSON.stringify(jsonData),
             dataType: 'json',
             contentType: 'application/json',
-            success: handlePredictResponse,
+            success: function(response) {
+              console.log(response)
+
+              predictions = response.predictions[0]
+              var max = maxIndexValue(predictions)
+              $('#prediction h3 span').text(classes[max[0]] + ' (' + percentage(max[1])+ ')')
+
+              var probabilities = []
+              for (var i = 0; i < classes.length; i++) {
+                  probabilities[i] = classes[i] + ': ' + percentage(predictions[i])
+              }
+              $('#prediction p span').text(probabilities.join(', '))
+            },
             cache: false
           })
         }
@@ -87,45 +112,68 @@
           method: 'get',
           url: '/predictions',
           contentType: 'application/json',
-          success: handlePredictionsResponse
+          success: function(response) {
+            console.log(response)
+
+            for (var i = 0; i < response.length; i++)  {
+              var canvas = document.createElement('canvas')
+              canvas.width = image_width
+              canvas.height = image_height
+              var ctx = canvas.getContext('2d')
+
+              var imageData = ctx.createImageData(image_width, image_height)
+              imageData.data.set(unshapeImageData(response[i].image, image_width, image_height))
+              ctx.putImageData(imageData, 0, 0)
+
+              var max = maxIndexValue(response[i].prediction)
+              $(canvas).attr('data-toggle', 'tooltip')
+              $(canvas).attr('data-placement', 'bottom')
+              $(canvas).attr('title', classes[max[0]] + ' (' + percentage(max[1])+ ')')
+              $('#predictions div').append(canvas)
+            }
+
+            $('[data-toggle="tooltip"]').tooltip()
+          }
         })
       }
 
-      var handlePredictResponse = function(response) {
-        console.log(response)
+      function getOrientation(file, callback) {
+        var reader = new FileReader()
+        reader.onload = function(e) {
 
-        predictions = response.predictions[0]
-        var max = maxIndexValue(predictions)
-        $('#prediction h3 span').text(classes[max[0]] + ' (' + percentage(max[1])+ ')')
+            var view = new DataView(e.target.result)
+            if (view.getUint16(0, false) != 0xFFD8) {
+                return callback(-2)
+            }
+            var length = view.byteLength, offset = 2
+            while (offset < length) {
+                if (view.getUint16(offset+2, false) <= 8) return callback(-1)
+                var marker = view.getUint16(offset, false)
+                offset += 2
+                if (marker == 0xFFE1) {
+                    if (view.getUint32(offset += 2, false) != 0x45786966) {
+                        return callback(-1)
+                    }
 
-        var probabilities = []
-        for (var i = 0; i < classes.length; i++) {
-            probabilities[i] = classes[i] + ': ' + percentage(predictions[i])
+                    var little = view.getUint16(offset += 6, false) == 0x4949
+                    offset += view.getUint32(offset + 4, little)
+                    var tags = view.getUint16(offset, little)
+                    offset += 2
+                    for (var i = 0; i < tags; i++) {
+                        if (view.getUint16(offset + (i * 12), little) == 0x0112) {
+                            return callback(view.getUint16(offset + (i * 12) + 8, little))
+                        }
+                    }
+                }
+                else if ((marker & 0xFF00) != 0xFF00) {
+                    break
+                } else {
+                    offset += view.getUint16(offset, false)
+                }
+            }
+            return callback(-1)
         }
-        $('#prediction p span').text(probabilities.join(', '))
-      }
-
-      var handlePredictionsResponse = function(response) {
-        console.log(response)
-
-        for (var i = 0; i < response.length; i++)  {
-          var canvas = document.createElement('canvas')
-          canvas.width = image_width
-          canvas.height = image_height
-          var ctx = canvas.getContext('2d')
-
-          var imageData = ctx.createImageData(image_width, image_height)
-          imageData.data.set(unshapeImageData(response[i].image, image_width, image_height))
-          ctx.putImageData(imageData, 0, 0)
-
-          var max = maxIndexValue(response[i].prediction)
-          $(canvas).attr('data-toggle', 'tooltip')
-          $(canvas).attr('data-placement', 'bottom')
-          $(canvas).attr('title', classes[max[0]] + ' (' + percentage(max[1])+ ')')
-          $('#predictions div').append(canvas)
-        }
-
-        $('[data-toggle="tooltip"]').tooltip()
+        reader.readAsArrayBuffer(file)
       }
 
       var shapeImageData = function(data, width, height) {
