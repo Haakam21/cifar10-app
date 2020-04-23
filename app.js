@@ -55,13 +55,13 @@ app.post('/predict', (req, res) => {
       prediction.save().then(result => {
         console.log('prediction saved')
       }).catch(error => {
-        console.log('prediction not saved')
+        console.log('prediction not saved:', error.message)
       })
     })
   })
 
-  ext_req.on('error', err => {
-    console.log(err)
+  ext_req.on('error', error => {
+    console.log(error.message)
   })
 
   ext_req.write(JSON.stringify(req.body))
