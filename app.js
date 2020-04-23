@@ -33,10 +33,6 @@ const httpsServer = https.createServer(https_options, app)
 app.use(express.json())
 app.use(express.static(__dirname + '/public'))
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html')
-})
-
 app.get('/predictions', (req, res) => {
   Prediction.find({}).sort('-date').limit(25).then(predictions => {
     res.json(predictions)
